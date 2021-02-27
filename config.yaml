@@ -1,0 +1,60 @@
+# 服务基本配置
+server:
+  runMode: debug
+  port: 8181
+  readTimeout: 60
+  writeTimeout: 60
+# zap日志配置
+zap:
+  level: 'info'
+  format: 'console'
+  prefix: '[GO-WEBHOOK]'
+  director: 'log'
+  link-name: 'latest_log'
+  show-line: true
+  encode-level: 'LowercaseColorLevelEncoder'
+  stacktrace-key: 'stacktrace'
+  log-in-console: true
+# CORS跨域资源共享
+cors:
+  allowAllOrigins: true
+  allowMethods:
+    - GET
+    - HEAD
+    - POST
+    - PUT
+    - DELETE
+    - CONNECT
+    - OPTIONS
+    - TRACE
+    - PATCH
+  allowHeaders:
+    - Origin
+    - Accept
+    - Content-Type
+    - Authorization
+  exposeHeaders:
+    - Content-Length
+  allowCredentials: true
+  maxAge: 12  # 单位: 小时
+# webhook配置
+webHookConfig:
+  fe/sdf:
+    - host: 192.168.100.6
+      port: 22
+      user: root
+      pwd: 111111
+      script: /opt/test.sh
+    - host: '172.16.2.114'
+      port: 22
+      user: root
+      pwd: 111111
+      script: /opt/sh/fecase.sh
+  zzb/master:
+    - host: 172.16.100.3
+      port: 2222
+      user: root
+      pwd: sdfsgfdsfg
+      script: /mnt/wwwroot/sh/dsf.sh
+
+
