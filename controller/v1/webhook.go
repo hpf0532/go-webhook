@@ -25,11 +25,13 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 	repoName, err := utils.GetRepoName(string(body))
 	if err != nil {
 		logger.SugarLogger.Error(err)
+		utils.ResponseFormat(c, 400, err.Error())
 		return
 	}
 	repoBranch, err := utils.GetRepoBranch(string(body))
 	if err != nil {
 		logger.SugarLogger.Error(err)
+		utils.ResponseFormat(c, 400, err.Error())
 		return
 	}
 	webHookKey := fmt.Sprintf("%s/%s", repoName, repoBranch)
@@ -38,15 +40,22 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 	serverList, ok := conf.WebHookConf.WebHookMap[webHookKey]
 	if !ok {
 		logger.SugarLogger.Infof("没有匹配的仓库和分支, %s", webHookKey)
+		utils.ResponseFormat(c, 200, "没有匹配的仓库和分支")
 		return
 	}
-	fmt.Println(serverList)
-	for _, host := range serverList {
-		fmt.Println(host.Host)
+	if serverList != nil && len(serverList) > 0 {
+		// 存在server，需要执行shell脚本
+		for _, s := range serverList {
+			if s.Script == "" {
+				logger.SugarLogger.Warnf("脚本为空, webHookKey: %s", webHookKey)
+				continue
+			}
+			logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
+			fmt.Println(s)
+
+		}
 	}
 
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
+	utils.ResponseFormat(c, 200, "success")
 
 }
