@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/hpf0532/go-webhook/extend/command"
 	"github.com/hpf0532/go-webhook/extend/conf"
 	"github.com/hpf0532/go-webhook/extend/logger"
 	"github.com/hpf0532/go-webhook/utils"
@@ -52,7 +53,8 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 			}
 			logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
 			fmt.Println(s)
-
+			//go command.CommandLocal(s.Script, 3600)
+			go command.CommandBySSH(s.Host, s.Port, s.User, s.Pwd, s.Script, 3600)
 		}
 	}
 
