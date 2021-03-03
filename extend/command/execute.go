@@ -243,7 +243,7 @@ func LocalExec(cmd string) ExecResult {
 	}
 }
 
-func Run(key string, host conf.HostConfig, to int) {
+func Run(hook *conf.HookConfig, key string, host conf.HostConfig, to int) {
 	ok := utils.IsRemote(host)
 	var err error
 	if !ok {

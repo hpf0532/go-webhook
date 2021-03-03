@@ -56,9 +56,14 @@ type HostConfig struct {
 	Script string
 }
 
+type HookConfig struct {
+	Url  string
+	Hook []*HostConfig
+}
+
 // webhook配置
 type SSHConfig struct {
-	WebHookMap map[string][]*HostConfig
+	WebHookMap map[string]*HookConfig
 }
 
 // ServerConf 服务基本配置
@@ -75,27 +80,35 @@ var WebHookConf = &SSHConfig{}
 
 // 解析webhook相关配置参数
 func ParseWebHookConf(conf map[string]interface{}) {
-	WebHookConf.WebHookMap = make(map[string][]*HostConfig)
+	WebHookConf.WebHookMap = make(map[string]*HookConfig)
 	for k, v := range conf {
-		if item, ok := v.([]interface{}); ok {
-			var hostList []*HostConfig
-			for _, host := range item {
-				var hostConf HostConfig = HostConfig{}
-				if err := mapstructure.WeakDecode(host, &hostConf); err != nil {
-					log.Fatalf("转换结构体失败, %s", err)
+		var hookConf = &HookConfig{}
+		for _, v1 := range v.(map[string]interface{}) {
+			if item, ok := v1.([]interface{}); ok {
+				var hostList []*HostConfig
+				for _, host := range item {
+					var hostConf HostConfig = HostConfig{}
+					if err := mapstructure.WeakDecode(host, &hostConf); err != nil {
+						log.Fatalf("转换结构体失败, %s", err)
+					}
+					hostList = append(hostList, &hostConf)
 				}
-				hostList = append(hostList, &hostConf)
-			}
-			WebHookConf.WebHookMap[k] = hostList
+				hookConf.Hook = hostList
 
-		} else {
-			log.Fatal("配置文件格式错误")
+			} else if url, ok := v1.(string); ok {
+				hookConf.Url = url
+			} else {
+				log.Fatal("配置文件格式错误")
+
+			}
 		}
+		WebHookConf.WebHookMap[k] = hookConf
+
 	}
 	fmt.Println(WebHookConf.WebHookMap)
 	for k, v := range WebHookConf.WebHookMap {
 		fmt.Println(k)
-		for i, j := range v {
+		for i, j := range v.Hook {
 			fmt.Println(i)
 			fmt.Println("Host: ", j.Host)
 			fmt.Println("Port: ", j.Port)

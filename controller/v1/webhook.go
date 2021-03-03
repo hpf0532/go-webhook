@@ -40,22 +40,22 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 	webHookKey := fmt.Sprintf("%s/%s", repoName, repoBranch)
 	logger.SugarLogger.Infof("webHookKey: %s", webHookKey)
 
-	serverList, ok := conf.WebHookConf.WebHookMap[webHookKey]
+	hook, ok := conf.WebHookConf.WebHookMap[webHookKey]
 	if !ok {
 		logger.SugarLogger.Infof("没有匹配的仓库和分支, %s", webHookKey)
 		utils.ResponseFormat(c, 200, "没有匹配的仓库和分支")
 		return
 	}
-	if serverList != nil && len(serverList) > 0 {
+	if hook.Hook != nil && len(hook.Hook) > 0 {
 		// 存在server，需要执行shell脚本
-		for _, s := range serverList {
+		for _, s := range hook.Hook {
 			if s.Script == "" {
 				logger.SugarLogger.Warnf("脚本为空, webHookKey: %s", webHookKey)
 				continue
 			}
 			logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
 			//go command.CommandLocal(s.Script, 3600)
-			go command.Run(webHookKey, *s, EXECTIMEOUT)
+			go command.Run(hook, webHookKey, *s, EXECTIMEOUT)
 		}
 	}
 

@@ -10,11 +10,11 @@ import (
 func GetRepoName(data string) (string, error) {
 	repo := gjson.Get(data, "repository.name")
 	if repo.Exists() {
-		return repo.String(), nil
+		return strings.ToLower(repo.String()), nil
 	}
 	repo = gjson.Get(data, "push_data.repository.name")
 	if repo.Exists() {
-		return repo.String(), nil
+		return strings.ToLower(repo.String()), nil
 	}
 	return "", errors.New("无法获取仓库名称")
 }
