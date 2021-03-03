@@ -13,6 +13,8 @@ import (
 // WebHookController webhook控制器
 type WebHookController struct{}
 
+const EXECTIMEOUT = 3600
+
 func (wc *WebHookController) HandleTask(c *gin.Context) {
 	//读取请求体
 	body, err := ioutil.ReadAll(c.Request.Body)
@@ -52,9 +54,8 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 				continue
 			}
 			logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
-			fmt.Println(s)
 			//go command.CommandLocal(s.Script, 3600)
-			go command.CommandBySSH(s.Host, s.Port, s.User, s.Pwd, s.Script, 3600)
+			go command.Run(webHookKey, *s, EXECTIMEOUT)
 		}
 	}
 

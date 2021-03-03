@@ -40,6 +40,13 @@ type cors struct {
 	MaxAge           time.Duration `mapstructure:"maxAge"`
 }
 
+// 钉钉消息推送配置
+type DingTalk struct {
+	AccessToken string
+	Secret      string
+	At          string
+}
+
 // 主机脚本相关配置
 type HostConfig struct {
 	Host   string
@@ -61,6 +68,8 @@ var ZapConf = &Zap{}
 
 // CORSConf 跨域资源共享配置
 var CORSConf = &cors{}
+
+var DingTalkConf = &DingTalk{}
 
 var WebHookConf = &SSHConfig{}
 
@@ -113,6 +122,7 @@ func Setup() {
 	viper.UnmarshalKey("server", ServerConf)
 	viper.UnmarshalKey("zap", ZapConf)
 	viper.UnmarshalKey("cors", CORSConf)
+	viper.UnmarshalKey("dingTalk", DingTalkConf)
 	conf := viper.GetStringMap("webHookConfig")
 	ParseWebHookConf(conf)
 	viper.WatchConfig()

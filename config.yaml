@@ -37,6 +37,11 @@ cors:
     - Content-Length
   allowCredentials: true
   maxAge: 12  # 单位: 小时
+# 钉钉消息推送配置
+dingTalk:
+  accessToken: 301738a5ddab23f1c9652a73335c64258f5062f5e508c805cab4fc9eab35476d
+  secret: SEC6c1809501504c582071ce6c85cd672e76c5445cf00e4982a4bff0197839c0dde
+  at: all
 # webhook配置
 webHookConfig:
   fe/sdf:
@@ -50,7 +55,7 @@ webHookConfig:
       user: root
       pwd: 111111
       script: /opt/sh/fecase.sh
-  zzb/master:
+  add/master:
     - host: ""
       port: ""
       user: ""

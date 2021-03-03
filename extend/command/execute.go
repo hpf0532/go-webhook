@@ -3,7 +3,10 @@ package command
 import (
 	"bytes"
 	"errors"
+	"github.com/hpf0532/go-webhook/extend/conf"
 	"github.com/hpf0532/go-webhook/extend/logger"
+	"github.com/hpf0532/go-webhook/extend/message"
+	"github.com/hpf0532/go-webhook/utils"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"os"
@@ -11,8 +14,6 @@ import (
 	"strconv"
 	"time"
 )
-
-const SSHTIMEOUT = 3600
 
 // result of the command execution
 type ExecResult struct {
@@ -136,13 +137,13 @@ func GetAuthPassword(password string) []ssh.AuthMethod {
 	return []ssh.AuthMethod{ssh.Password(password)}
 }
 
-func CommandBySSH(host string, port int, user string, pwd string, cmd string, to int) (*ExecResult, error) {
+func CommandBySSH(host conf.HostConfig, to int) (*ExecResult, error) {
 	var authKeys []ssh.AuthMethod
 	timeout := time.After(time.Duration(to) * time.Second)
 	execResultCh := make(chan *ExecResult, 1)
 	// 密码不为空则使用密码连接
-	if len(pwd) > 0 {
-		authKeys = GetAuthPassword(pwd)
+	if len(host.Pwd) > 0 {
+		authKeys = GetAuthPassword(host.Pwd)
 
 	} else {
 		// 使用密钥连接
@@ -159,14 +160,14 @@ func CommandBySSH(host string, port int, user string, pwd string, cmd string, to
 	}
 
 	session := &HostSession{
-		Hostname: host,
-		Username: user,
-		Port:     port,
-		Password: pwd,
+		Hostname: host.Host,
+		Username: host.User,
+		Port:     host.Port,
+		Password: host.Pwd,
 		Auths:    authKeys,
 	}
 	go func() {
-		sshResult := session.Exec(cmd, session.GenerateConfig())
+		sshResult := session.Exec(host.Script, session.GenerateConfig())
 		execResultCh <- sshResult
 	}()
 	select {
@@ -185,8 +186,8 @@ func CommandBySSH(host string, port int, user string, pwd string, cmd string, to
 		}
 
 	case <-timeout:
-		logger.SugarLogger.Errorf("主机%s执行脚本%s超时", host, cmd)
-		return &ExecResult{Command: cmd, Error: errors.New("cmd time out")}, errors.New("cmd time out")
+		logger.SugarLogger.Errorf("主机%s执行脚本%s超时", host.Host, host.Script)
+		return &ExecResult{Command: host.Script, Error: errors.New("cmd time out")}, errors.New("cmd time out")
 	}
 }
 
@@ -240,4 +241,18 @@ func LocalExec(cmd string) ExecResult {
 		execResult.Result = b.String()
 		return execResult
 	}
+}
+
+func Run(key string, host conf.HostConfig, to int) {
+	ok := utils.IsRemote(host)
+	var err error
+	if !ok {
+		_, err = CommandLocal(host.Script, to)
+	} else {
+		_, err = CommandBySSH(host, to)
+	}
+	if err != nil {
+		message.DingTalkSend(key, err.Error())
+	}
+
 }
