@@ -3,6 +3,7 @@ module github.com/hpf0532/go-webhook
 go 1.15
 
 require (
+	github.com/Albert-Zhan/httpc v0.0.0-20210108124012-d3f23351b50f
 	github.com/blinkbean/dingtalk v0.0.0-20201231030509-45a553a84503
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-contrib/cors v1.3.1

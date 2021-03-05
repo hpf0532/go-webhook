@@ -13,7 +13,7 @@ func DingTalkSend(title, msg string) {
 		conf.DingTalkConf.Secret,
 	)
 	markdown := []string{
-		"### " + title,
+		"## " + title,
 		"---------",
 		msg,
 	}

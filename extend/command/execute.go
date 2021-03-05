@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/hpf0532/go-webhook/extend/conf"
 	"github.com/hpf0532/go-webhook/extend/logger"
 	"github.com/hpf0532/go-webhook/extend/message"
@@ -12,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -137,7 +140,8 @@ func GetAuthPassword(password string) []ssh.AuthMethod {
 	return []ssh.AuthMethod{ssh.Password(password)}
 }
 
-func CommandBySSH(host conf.HostConfig, to int) (*ExecResult, error) {
+func CommandBySSH(host conf.HostConfig, to int, wg *sync.WaitGroup) (*ExecResult, error) {
+	defer wg.Done()
 	var authKeys []ssh.AuthMethod
 	timeout := time.After(time.Duration(to) * time.Second)
 	execResultCh := make(chan *ExecResult, 1)
@@ -181,7 +185,7 @@ func CommandBySSH(host conf.HostConfig, to int) (*ExecResult, error) {
 		if errorText != "" {
 			return res, errors.New(errorText)
 		} else {
-			logger.SugarLogger.Infof("主机%s运行%s脚本完成, 运行结果为: %s", sres.Host, sres.Command, sres.Result)
+			logger.SugarLogger.Infof("主机%s运行%s脚本完成, 运行结果为: \n%s", sres.Host, sres.Command, sres.Result)
 			return res, nil
 		}
 
@@ -191,7 +195,8 @@ func CommandBySSH(host conf.HostConfig, to int) (*ExecResult, error) {
 	}
 }
 
-func CommandLocal(cmd string, to int) (ExecResult, error) {
+func CommandLocal(cmd string, to int, wg *sync.WaitGroup) (ExecResult, error) {
+	defer wg.Done()
 	timeout := time.After(time.Duration(to) * time.Second)
 	execResultCh := make(chan *ExecResult, 1)
 	go func() {
@@ -209,7 +214,7 @@ func CommandLocal(cmd string, to int) (ExecResult, error) {
 		if errorText != "" {
 			return sres, errors.New(errorText)
 		} else {
-			logger.SugarLogger.Infof("本地脚本%s运行完成, 运行结果为: %s", sres.Command, sres.Result)
+			logger.SugarLogger.Infof("本地脚本%s运行完成, 运行结果为: \n%s", sres.Command, sres.Result)
 			return sres, nil
 		}
 
@@ -243,16 +248,46 @@ func LocalExec(cmd string) ExecResult {
 	}
 }
 
-func Run(hook *conf.HookConfig, key string, host conf.HostConfig, to int) {
-	ok := utils.IsRemote(host)
+func Run(info *utils.WebHookInfo, hook *conf.HookConfig, key string, to int) {
 	var err error
-	if !ok {
-		_, err = CommandLocal(host.Script, to)
-	} else {
-		_, err = CommandBySSH(host, to)
+	var errList []string
+	var wg sync.WaitGroup
+	start := time.Now().Unix()
+	for _, s := range hook.Hook {
+		if s.Script == "" {
+			logger.SugarLogger.Warnf("脚本为空, webHookKey: %s", key)
+			continue
+		}
+		logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
+		//go command.CommandLocal(s.Script, 3600)
+		ok := utils.IsRemote(*s)
+		wg.Add(1)
+		if !ok {
+			go func(s *conf.HostConfig) {
+				_, err = CommandLocal(s.Script, to, &wg)
+				if err != nil {
+					errList = append(errList, err.Error())
+				}
+			}(s)
+		} else {
+			go func(s *conf.HostConfig) {
+				_, err = CommandBySSH(*s, to, &wg)
+				if err != nil {
+					errList = append(errList, err.Error())
+				}
+			}(s)
+		}
+
 	}
-	if err != nil {
-		message.DingTalkSend(key, err.Error())
+	wg.Wait()
+	end := time.Now().Unix()
+	totalTime := end - start
+
+	if len(errList) > 0 {
+		message.DingTalkSend(key, strings.Join(errList, "\n"))
+		return
 	}
+	msg := fmt.Sprintf("- 提交人: %s  \n- 项目分支: %s  \n- Comment: %s  \n- 访问地址: %s  \n- 用时:%d秒  \n", info.Pusher, info.Branch, info.Comment, info.Url, totalTime)
+	message.DingTalkSend(fmt.Sprintf("测试项目%s发布完成", info.RepoName), msg)
 
 }

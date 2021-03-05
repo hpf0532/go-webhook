@@ -22,16 +22,17 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 		logger.SugarLogger.Errorf("读取body错误: %s", err)
 		return
 	}
-	logger.SugarLogger.Infof("当前请求体数据: %s", string(body))
+	bodyStr := string(body)
+	logger.SugarLogger.Infof("当前请求体数据: %s", bodyStr)
 
 	// 解析仓库名称
-	repoName, err := utils.GetRepoName(string(body))
+	oName, repoName, err := utils.GetRepoName(bodyStr)
 	if err != nil {
 		logger.SugarLogger.Error(err)
 		utils.ResponseFormat(c, 400, err.Error())
 		return
 	}
-	repoBranch, err := utils.GetRepoBranch(string(body))
+	repoBranch, err := utils.GetRepoBranch(bodyStr)
 	if err != nil {
 		logger.SugarLogger.Error(err)
 		utils.ResponseFormat(c, 400, err.Error())
@@ -46,17 +47,19 @@ func (wc *WebHookController) HandleTask(c *gin.Context) {
 		utils.ResponseFormat(c, 200, "没有匹配的仓库和分支")
 		return
 	}
+	a := utils.GetLatestCommit(bodyStr)
+	fmt.Println(a)
 	if hook.Hook != nil && len(hook.Hook) > 0 {
+		MsgInfo := utils.NewWebHookInfo()
+		MsgInfo.Url = hook.Url
+		MsgInfo.Comment = utils.GetLatestCommit(bodyStr)
+		MsgInfo.Pusher = utils.GetPushUser(bodyStr)
+		MsgInfo.RepoName = oName
+		MsgInfo.Branch = repoBranch
 		// 存在server，需要执行shell脚本
-		for _, s := range hook.Hook {
-			if s.Script == "" {
-				logger.SugarLogger.Warnf("脚本为空, webHookKey: %s", webHookKey)
-				continue
-			}
-			logger.SugarLogger.Infof("开始执行脚本, %s", s.Script)
-			//go command.CommandLocal(s.Script, 3600)
-			go command.Run(hook, webHookKey, *s, EXECTIMEOUT)
-		}
+		go func() {
+			command.Run(MsgInfo, hook, webHookKey, EXECTIMEOUT)
+		}()
 	}
 
 	utils.ResponseFormat(c, 200, "success")
