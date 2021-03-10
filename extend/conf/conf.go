@@ -3,9 +3,11 @@ package conf
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	"github.com/joho/godotenv"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 	"time"
 )
 
@@ -78,6 +80,8 @@ var DingTalkConf = &DingTalk{}
 
 var WebHookConf = &SSHConfig{}
 
+var GitLabToken string
+
 // 解析webhook相关配置参数
 func ParseWebHookConf(conf map[string]interface{}) {
 	WebHookConf.WebHookMap = make(map[string]*HookConfig)
@@ -121,13 +125,22 @@ func ParseWebHookConf(conf map[string]interface{}) {
 
 // Setup 生成服务配置
 func Setup() {
-
+	err := godotenv.Load()
+	if err != nil {
+		panic(fmt.Errorf("Fatal error env file: %s \n", err))
+	}
+	// 配置钉钉
+	DingTalkConf.AccessToken = os.Getenv("DingTalkAccessToken")
+	DingTalkConf.Secret = os.Getenv("DingTalkSecret")
+	DingTalkConf.At = os.Getenv("DingTalkAt")
+	//配置gitlab access token
+	GitLabToken = os.Getenv("GitLabToken")
 	viper.SetConfigType("yaml")
 	// 读取配置文件内容
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	// 读取配置文件
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
@@ -135,7 +148,6 @@ func Setup() {
 	viper.UnmarshalKey("server", ServerConf)
 	viper.UnmarshalKey("zap", ZapConf)
 	viper.UnmarshalKey("cors", CORSConf)
-	viper.UnmarshalKey("dingTalk", DingTalkConf)
 	conf := viper.GetStringMap("webHookConfig")
 	ParseWebHookConf(conf)
 	viper.WatchConfig()

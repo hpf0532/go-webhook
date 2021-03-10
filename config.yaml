@@ -37,11 +37,7 @@ cors:
     - Content-Length
   allowCredentials: true
   maxAge: 12  # 单位: 小时
-# 钉钉消息推送配置
-dingTalk:
-  accessToken:
-  secret:
-  at: all
+
 # webhook配置
 webHookConfig:
   fd/sdf:

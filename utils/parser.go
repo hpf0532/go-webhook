@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Albert-Zhan/httpc"
+	"github.com/hpf0532/go-webhook/extend/conf"
 	"github.com/tidwall/gjson"
 	"net/http"
 	"strings"
@@ -88,7 +89,7 @@ func GetLatestCommit(data string) string {
 	client := httpc.NewHttpClient()
 	req := httpc.NewRequest(client)
 	req.SetMethod("get").SetUrl(url)
-	resp, body, err := req.SetHeader("PRIVATE-TOKEN", "7s_KDH4ALPF_tz8zoyss").Send().End()
+	resp, body, err := req.SetHeader("PRIVATE-TOKEN", conf.GitLabToken).Send().End()
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return ""
 	}

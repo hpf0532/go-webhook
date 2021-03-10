@@ -22,3 +22,5 @@ log/
 logs/
 *.log
 *.gz
+prod.yaml
+.env
