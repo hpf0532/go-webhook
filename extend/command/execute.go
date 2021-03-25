@@ -284,7 +284,12 @@ func Run(info *utils.WebHookInfo, hook *conf.HookConfig, key string, to int) {
 	totalTime := end - start
 
 	if len(errList) > 0 {
-		message.DingTalkSend(key, strings.Join(errList, "\n"))
+		errMsg := strings.Join(errList, "\n")
+		if len(errMsg) > 300 {
+			message.DingTalkSend(key, "任务发布失败，具体详情请联系管理员")
+		} else {
+			message.DingTalkSend(key, errMsg)
+		}
 		return
 	}
 	msg := fmt.Sprintf("- 提交人: %s  \n- 项目分支: %s  \n- Comment: %s  \n- 访问地址: %s  \n- 用时:%d秒  \n", info.Pusher, info.Branch, info.Comment, info.Url, totalTime)

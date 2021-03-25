@@ -33,6 +33,7 @@ func DingTalkSend(title, msg string) {
 
 	if err != nil {
 		logger.SugarLogger.Errorf("钉钉消息发送失败, %s", err)
+		return
 	}
 
 	logger.SugarLogger.Info("钉钉机器人推送成功")
