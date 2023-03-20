@@ -84,7 +84,7 @@ func GetLatestCommit(data string) string {
 		return ""
 	}
 	fmt.Println(projectId, branch)
-	url := fmt.Sprintf("https://gitlab.duncredit.com/api/v4/projects/%s/repository/commits?ref_name=%s", projectId.String(), branch)
+	url := fmt.Sprintf("%s/api/v4/projects/%s/repository/commits?ref_name=%s", conf.GitLabHost, projectId.String(), branch)
 	fmt.Println(url)
 	client := httpc.NewHttpClient()
 	req := httpc.NewRequest(client)

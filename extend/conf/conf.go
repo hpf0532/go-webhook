@@ -82,6 +82,8 @@ var WebHookConf = &SSHConfig{}
 
 var GitLabToken string
 
+var GitLabHost string
+
 // 解析webhook相关配置参数
 func ParseWebHookConf(conf map[string]interface{}) {
 	WebHookConf.WebHookMap = make(map[string]*HookConfig)
@@ -135,6 +137,7 @@ func Setup() {
 	DingTalkConf.At = os.Getenv("DingTalkAt")
 	//配置gitlab access token
 	GitLabToken = os.Getenv("GitLabToken")
+	GitLabHost = os.Getenv("GitLabHost")
 	viper.SetConfigType("yaml")
 	// 读取配置文件内容
 	viper.SetConfigName("config")
